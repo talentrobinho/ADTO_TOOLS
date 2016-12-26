@@ -1,0 +1,416 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="/static/favicon.ico">
+
+    <title>Dashboard Template for Bootstrap</title>
+
+
+
+    <!-- EasyUI CSS load -->
+    <link href="/static/other/jquery_easyui_1_5/themes/bootstrap/easyui.css" rel="stylesheet" class="skins" type="text/css" />
+
+    <!-- Bootstrap core JS and JQuery  -->
+    <script src="http://cdn.bootcss.com/jquery/1.11.1/jquery.js"></script>
+    <script src="/static/dist/js/bootstrap.min.js"></script>
+
+
+    <!-- Bootstrap core CSS -->
+    <link href="/static/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="/static/dist/css/dashboard.css" rel="stylesheet">
+
+
+
+    <!-- EasyUI JS load --> <!-- EasyTree Rely on bootstrap and jquery -->
+    <script src="/static/other/jquery_easyui_1_5/jquery.easyui.min.js"></script>
+    <script src="/static/other/jquery_easyui_1_5/plugins/jquery.droppable.js"></script>
+    <script src="/static/other/jquery_easyui_1_5/plugins/jquery.draggable.js"></script>
+    <script src="/static/other/jquery_easyui_1_5/plugins/jquery.tree.js"></script>
+
+    
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    <script src="/static/assets/js/ie-emulation-modes-warning.js"></script>
+
+    <link href="//code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css" />
+
+
+    <!-- User defind load css-->
+    <link rel="stylesheet" href="http://adqa.sogou-inc.com/common/css/adtheader.css">
+
+    <!-- User defind load js-->
+    <script src="/static/other/js/user-defined/left_sidebar.js"></script>
+    <script src="http://oa.adtech.sogou-inc.com/adtechsso/static/js/adtsso.js"></script>
+
+    <!--
+    <script language="JavaScript">
+        function myrefresh()
+        {
+           window.location.reload();
+        }
+        setTimeout('myrefresh()',60000); //指定60秒刷新一次
+    </script>
+    -->
+
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="http://cdn.bootcss.com/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="http://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Galactic Warships</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#" onclick="set_privilege()">我能上啥</a></li>
+            <li><a href="#" onclick="to_online()">我要上线</a></li>
+            <li><a href="#" onclick="logout()">登出</a></li>
+          </ul>
+          <form class="navbar-form navbar-right">
+            <input type="text" class="form-control" placeholder="Search...">
+          </form>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <div class="row">
+
+        <!-- 左侧导航栏-->
+        <!--
+        <div class="col-sm-3 col-md-2 sidebar">
+          <ul class="nav nav-sidebar">
+            <li class="active"><a href="#">Overview</a></li>
+            <li><a href="#">Reports</a></li>
+            <li><a href="#">Analytics</a></li>
+            <li><a href="#">Export</a></li>
+          </ul>
+          <ul class="nav nav-sidebar">
+            <li><a href="">Nav item</a></li>
+            <li><a href="">Nav item again</a></li>
+            <li><a href="">One more nav</a></li>
+            <li><a href="">Another nav item</a></li>
+            <li><a href="">More navigation</a></li>
+          </ul>
+          <ul class="nav nav-sidebar">
+            <li><a href="">Nav item again</a></li>
+            <li><a href="">One more nav</a></li>
+            <li><a href="">Another nav item</a></li>
+          </ul>
+        </div>
+        -->
+
+        <div id="left_tree"  class="col-sm-3 col-md-2 sidebar">
+            <ul id="leftbar" class="easyui-tree">
+            </ul>
+        </div>
+        <!-- 左侧导航栏 end -->
+
+
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+
+          <!-- <h1 class="page-header">上线信息</h1> -->
+
+          <!-- <div class="row placeholders"></div> -->
+         <form class="form-horizontal" role="form" method="POST">
+         {% csrf_token %}
+            <div class="panel panel-default">
+                <div class="panel-heading">上线内容</div>
+                <div class="panel-body">
+                    <div class="row form-group">
+                        <div class="col-sm-3 col-lg-3">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="according_ring" id="according_ring" onclick="control_ring()">
+                                    按环上线
+                                </label>
+                            </div>
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="according_route" id="according_route" onclick="control_route()">
+                                    按路上线
+                                </label>
+                            </div>
+
+                        </div>
+                        <!-- <div class="col-sm-6 col-lg-6"> -->
+                        <div class="col-sm-3 col-lg-3">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" value="bin" id="bin">
+                                bin file
+                              </label>
+                            </div>
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" value="conf" id="conf" onclick="show_filepath()">
+                                conf file
+                              </label>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 col-lg-3" id="routediv">
+                            <select class="form-control" id="route">
+                            </select>
+                        </div>
+                        <div class="col-sm-2 col-lg-2" id="multi_button">
+                            <div class="btn-group" style="display: none" id="opselectbutton">
+                                <button type="button" class="btn btn-default" onclick="addroute()">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                </button>
+                                <button type="button" class="btn btn-default" onclick="delroute()">
+                                <span class="glyphicon glyphicon-minus"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 col-lg-3">
+                            <!-- <select class="form-control" id="ring" style="display:none" disabled="true">-->
+                            <select class="form-control" id="ring" style="display:none">
+                            </select>
+                        </div>
+                      </div> <!-- row end -->
+                      <div class="row form-group" id="filepath" style="display:none">
+                            <div class="col-sm-6 col-lg-6">
+                                <!--<label class="col-sm-2 control-label">file path</label>-->
+                                <label>文件地址</label>
+                                <!-- <div class="col-sm-8 col-lg-8">-->
+                                    <input type="text" value=""  class="form-control" id="file_path">
+                            </div>
+                       </div> <!-- row end -->
+                      <div class="row form-group">
+                            <div class="col-sm-6 col-lg-6" id="filelist" style="display:none">
+                                <!--<label class="col-sm-2 control-label">file path</label>-->
+                                <label>文件列表</label>
+                                <!-- <div class="col-sm-8 col-lg-8">-->
+                                    <input type="text" value=""  class="form-control" id="file_list">
+                            </div>
+                            <div class="col-sm-3 col-lg-3 col-lg-offset-9">
+                                  <div class="col-sm-6 col-lg-6">
+                                      <!-- <button type="button" class="btn btn-default btn-lg btn-block" onclick="build_project()">Build</button>-->
+                                      <button id="button_build" type="button" class="btn btn-default btn-lg btn-block" data-toggle="modal" onclick="show_build_modal()" disabled>Build</button>
+                                  </div>
+                                  <div class="col-sm-6 col-lg-6">
+                                      <!--<button type="button" class="btn btn-default btn-lg btn-block" onclick="deploy_project()">Deploy</button>-->
+                                      <button id="button_deploy" type="button" class="btn btn-default btn-lg btn-block" data-toggle="modal" onclick="show_deploy_modal()" disabled>Deploy</button>
+                                  </div>
+                                   
+                             </div>
+                       </div> <!-- row end -->
+                  </div> <!-- panel body end -->
+               </div> <!-- panel default end -->
+            </form>
+
+
+            <!-- Large Build modal -->
+            <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="build_modal">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                      <h4 class="modal-title">构建信息确认</h4>
+                  </div>
+                  <div class="modal-body">
+                     <form class="form-horizontal" role="form">
+                           <div class="form-group">
+                              <label class="col-sm-2 control-label">构建服务</label>
+                              <div class="col-sm-10">
+                                  <p class="form-control-static" id="build_service"></p>
+                              </div>
+                              <label class="col-sm-2 control-label">构建内容</label>
+                              <div class="col-sm-10">
+                                  <p class="form-control-static" id="build_content"></p>
+                              </div>
+                              <label class="col-sm-2 control-label" id="file_path_label">文件路径</label>
+                              <div class="col-sm-10">
+                                  <p class="form-control-static" id="rsync_file_path"></p>
+                              </div>
+                              <label class="col-sm-2 control-label" id="file_list_label">文件列表</label>
+                              <div class="col-sm-10">
+                                  <p class="form-control-static" id="rsync_file_list"></p>
+                              </div>
+                           </div>
+                      </form>
+                      <!--
+                        <div class="progress">
+                            <div id="barc" class="progress-bar" role="progressbar" aria-valuenow="20" aria-valuemin="30" aria-valuemax="10" style="width: 0%;"></div>
+                        </div>
+                      -->
+                   </div>
+                   <div class="modal-footer">
+                          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                          <button type="button" class="btn btn-primary" onclick="build_project()">Sure</button>
+                   </div>
+                </div>
+              </div>
+            </div>
+            <!-- Large Build modal end -->
+            
+            
+            <!-- Large Deploy modal -->
+            <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="deploy_modal">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                      <h4 class="modal-title">上线信息确认</h4>
+                  </div>
+                  <div class="modal-body">
+                      <form class="form-horizontal" role="form">
+                           <div class="form-group">
+                              <label class="col-sm-2 control-label">上线服务</label>
+                              <div class="col-sm-10">
+                                  <p class="form-control-static" id="deploy_service">One fine body Build&hellip;</p>
+                              </div>
+                              <label class="col-sm-2 control-label">上线内容</label>
+                              <div class="col-sm-10">
+                                  <p class="form-control-static" id="deploy_content">One fine body Build&hellip;</p>
+                              </div>
+                              <label class="col-sm-2 control-label">上线IP列表</label>
+                              <div class="col-sm-10">
+                                  <p class="form-control-static" id="ip_list">One fine body Build&hellip;</p>
+                              </div>
+                           </div>
+                      </form>
+                  </div>
+                  <div class="modal-footer">
+                      <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-primary" onclick="deploy_project()">Sure</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Large Deploy modal end -->
+           
+            <!-- Large Online modal -->
+            <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="online_modal">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                      <h4 class="modal-title">进行上线操作确认</h4>
+                  </div>
+                  <div class="modal-body">
+                      <form class="form-horizontal" role="form">
+                           <div class="form-group">
+                              <div class="col-sm-10">
+                                  <!-- <p class="form-control-static" id="deploy_service">是否进行上线&hellip;</p> -->
+                                    <center>
+                                  <h2>是否进行上线</h2>
+                                    </center>
+                              </div>
+                           </div>
+                      </form>
+                  </div>
+                  <div class="modal-footer">
+                      <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-primary" onclick="sure_online()">Sure</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Large Online modal end -->
+ 
+            <!-- Large Set Privilege modal -->
+            <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="set_privilege">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                      <h4 class="modal-title">添加上线权限</h4>
+                  </div>
+                  <div class="modal-body">
+                      <form class="form-horizontal" role="form">
+                           <div class="form-group">
+                              <div class="col-sm-12">
+                                  <!-- <p class="form-control-static" id="deploy_service">是否进行上线&hellip;</p> -->
+                                    <center>
+                                        <div class="row">
+                                          <div class="col-md-2">
+                                        <!--
+                                            <select multiple id="bs3Select" class="selectpicker show-tick form-control" data_live_search="true">  
+                                        -->
+                                            <select id="bs3Select" class="selectpicker show-tick form-control" data_live_search="true">  
+                                                 <option>songwanbo</option>  
+                                                 <option>mengqingping</option>  
+                                                 <option>lizhansheng</option>  
+                                            </select> 
+                                          </div>
+                                          <div class="col-md-5">
+                                                <!-- <textarea class="form-control" rows="3" id="server_list"></textarea> -->
+                                                <select multiple id="server_list" class="selectpicker show-tick form-control" data_live_search="true">  
+                                                </select> 
+                                          </div>
+                                        <!--
+                                          <div class="col-md-1">
+                                            <center>
+                                                    >>
+                                            </center>
+                                          </div>
+                                        -->
+                                          <div class="col-md-5">
+                                        <!--
+                                                <textarea class="form-control" rows="3" id="add_server"></textarea>
+                                        -->
+                                                <select multiple id="select_server" class="selectpicker show-tick form-control" data_live_search="true">  
+                                                </select> 
+                                          </div>
+                                        </div>
+                                    </center>
+                              </div>
+                           </div>
+                      </form>
+                  </div>
+                  <div class="modal-footer">
+                      <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-primary" onclick="add_privilege_to_db()">Sure</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Large Online modal end -->
+
+
+
+        <!--
+          <h2 class="sub-header">Section title</h2>
+          <div class="table-responsive">
+          </div>
+          -->
+
+        </div> <!-- main end -->
+      </div> <!-- row end -->
+    </div> <!-- container end -->
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <!-- <script src="http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js"></script> -->
+    <!--<script src="/static/dist/js/bootstrap.min.js"></script>-->
+    <script src="/static/assets/js/docs.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="/static/assets/js/ie10-viewport-bug-workaround.js"></script>
+    <!-- User defind js load -->
+    <!-- load csrftoken js -->
+    <script src="/static/other/js/user-defined/setting_csrf_token.js"></script>
+  </body>
+</html>
