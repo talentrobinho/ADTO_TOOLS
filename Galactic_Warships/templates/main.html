@@ -158,7 +158,7 @@
                         <div class="col-sm-3 col-lg-3">
                             <div class="checkbox">
                               <label>
-                                <input type="checkbox" value="bin" id="bin">
+                                <input type="checkbox" value="bin" id="bin" onclick="show_binfilepath()">
                                 bin file
                               </label>
                             </div>
@@ -188,22 +188,40 @@
                             <select class="form-control" id="ring" style="display:none">
                             </select>
                         </div>
-                      </div> <!-- row end -->
+                    </div> <!-- row end -->
+                    <div class="row form-group" id="binfilepath" style="display:none">
+                            <div class="col-sm-6 col-lg-6">
+                                <!--<label class="col-sm-2 control-label">file path</label>-->
+                                <label>BIN文件地址</label>
+                                <!-- <div class="col-sm-8 col-lg-8">-->
+                                    <input type="text" value=""  class="form-control" id="bin_file_path">
+                            </div>
+                      </div>
+                      <div class="row form-group" id="binfilemd5" style="display:none">
+                            <div class="col-sm-6 col-lg-6">
+                                <!--<label class="col-sm-2 control-label">file path</label>-->
+                                <label>BIN文件MD5值</label>
+                                <!-- <div class="col-sm-8 col-lg-8">-->
+                                    <input type="text" value=""  class="form-control" id="bin_file_md5">
+                            </div>
+                      </div>
                       <div class="row form-group" id="filepath" style="display:none">
                             <div class="col-sm-6 col-lg-6">
                                 <!--<label class="col-sm-2 control-label">file path</label>-->
-                                <label>文件地址</label>
+                                <label>CONF文件地址</label>
                                 <!-- <div class="col-sm-8 col-lg-8">-->
                                     <input type="text" value=""  class="form-control" id="file_path">
                             </div>
                        </div> <!-- row end -->
-                      <div class="row form-group">
-                            <div class="col-sm-6 col-lg-6" id="filelist" style="display:none">
+                      <div class="row form-group" id="filelist" style="display:none">
+                            <div class="col-sm-6 col-lg-6">
                                 <!--<label class="col-sm-2 control-label">file path</label>-->
-                                <label>文件列表</label>
+                                <label>CONF文件列表</label>
                                 <!-- <div class="col-sm-8 col-lg-8">-->
                                     <input type="text" value=""  class="form-control" id="file_list">
                             </div>
+                      </div>
+                      <div class="row form-group">
                             <div class="col-sm-3 col-lg-3 col-lg-offset-9">
                                   <div class="col-sm-6 col-lg-6">
                                       <!-- <button type="button" class="btn btn-default btn-lg btn-block" onclick="build_project()">Build</button>-->

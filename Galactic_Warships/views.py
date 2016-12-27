@@ -496,27 +496,34 @@ def build_project(req):
             server = req.POST.get('server')
             route = req.POST.get('route')
             ring = req.POST.get('ring')
+            binfilepath = req.POST.get('get_bin_path')
+            binfilemd5 = req.POST.get('check_bin_md5')
             filepath = req.POST.get('rsync_path')
             filetype = req.POST.get('file')
             filelist = req.POST.get('rsync_file')
-            if int(filetype) == 0:
-                new_file_path = 'bin'
-                print 'bbbbbbbbbbbbbbbbbbbbbbbbbbb'
-            elif int(filetype) == 1 or int(filetype) == 2:
-                new_file_path = 'conf'
-                print 'filelist: %s'%(filelist,)
-            localpath = "/tmp/adtech/%s/%s/%s/%s"%(server, route, ring, new_file_path)
+            
+            ##############################################
+            ### 将用户conf或bin文件拉到本地，再上传svn ###
+            ##############################################
 
-            print 'localpath: %s'%(localpath,)
-            print 'pgname: %s'%(pgname,)
-            print 'new_file_path: %s'%(new_file_path,)
-            opfile = OperationFile(src_path=filepath, dst_path=localpath, option="-aP", file_list_str=filelist)
-            rsyncresult=opfile.rsync_file()
-            print "rsyncresult: %s"%(rsyncresult,)
-            if rsyncresult == 0:
-                opsvn = OperationSVN(code_path=localpath)
-                opsvn.add_file(filelist)
-                opsvn.commit_file(file=filelist, desc='test xxxx svn')
+            ### if int(filetype) == 0:
+            ###     new_file_path = 'bin'
+            ###     print 'bbbbbbbbbbbbbbbbbbbbbbbbbbb'
+            ### elif int(filetype) == 1 or int(filetype) == 2:
+            ###     new_file_path = 'conf'
+            ###     print 'filelist: %s'%(filelist,)
+            ### localpath = "/tmp/adtech/%s/%s/%s/%s"%(server, route, ring, new_file_path)
+
+            ### print 'localpath: %s'%(localpath,)
+            ### print 'pgname: %s'%(pgname,)
+            ### print 'new_file_path: %s'%(new_file_path,)
+            ### opfile = OperationFile(src_path=filepath, dst_path=localpath, option="-aP", file_list_str=filelist)
+            ### rsyncresult=opfile.rsync_file()
+            ### print "rsyncresult: %s"%(rsyncresult,)
+            ### if rsyncresult == 0:
+            ###     opsvn = OperationSVN(code_path=localpath)
+            ###     opsvn.add_file(filelist)
+            ###     opsvn.commit_file(file=filelist, desc='test xxxx svn')
 
             if online_type == "on_ring":
                 #print "online_type: %s; server: %s; route: %s;ring: %s;"%(online_type, server, route, ring)

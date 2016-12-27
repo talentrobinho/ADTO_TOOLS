@@ -191,6 +191,21 @@ function show_filepath()
     }
     
 }
+function show_binfilepath()
+{
+    if($("#bin").is(":checked"))
+    {
+        $("#binfilepath").removeAttr('style')
+        $("#binfilemd5").removeAttr('style')
+    }
+    else
+    {
+        $("#binfilepath").attr('style', 'display:none')
+        $("#binfilemd5").attr('style', 'display:none')
+    }
+    
+}
+
 
 /*******************************
     增加、减少路选择框函数          
@@ -228,21 +243,15 @@ function addroute()
                 routeSelect.options.add(new Option(value, value))
         });
         count++
-        //children_count=$("#routediv").children("select").length
-        //alert(children_count)
     }
-    //else
-    //{
-    //    children_count=$("#routediv").children("select").length
-    //    alert(children_count)
-    //    if(children_count == 1)
-    //    {
-    //        count = 1
-    //    }
-    //}
 }
+
 function delroute()
 {
+    //获取div里select的个数
+    //children_count=$("#routediv").children("select").length
+    //删除路的下拉列表
+    $("#routediv").children("select:last").remove();
 }
 
 
@@ -443,6 +452,21 @@ function check_form()
             bin_flag=1
             //alert(select_bin)
             //form_content['bin'] = select_bin
+            get_bin_path=$("#bin_file_path").val()
+            check_bin_md5=$("#bin_file_md5").val()
+            if(get_bin_path.length==0)
+            {
+                alert("BIN文件地址不能为空")
+                return false
+            }
+            else if(check_bin_md5.length==0)
+            {
+                alert("BIN文件MD5值不能为空")
+                return false
+            }
+            form_content['get_bin_path'] = get_bin_path
+            form_content['check_bin_md5'] = check_bin_md5
+
     }
     if($("#conf").is(":checked"))
     {
@@ -450,12 +474,12 @@ function check_form()
             rsync_file=$("#file_list").val()
             if(rsync_path.length==0)
             {
-                alert("文件地址不能为空")
+                alert("CONF文件地址不能为空")
                 return false
             }
             if(rsync_file.length==0)
             {
-                alert("文件列表不能为空")
+                alert("CONF文件列表不能为空")
                 return false
             }
             select_conf = $("#conf").val()
