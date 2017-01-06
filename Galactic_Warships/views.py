@@ -12,8 +12,44 @@ import jenkins
 from django.conf import settings
 from django.core.cache import cache
 import subprocess
-from Galactic_Warships.salt_deploy import SALTDEPLOY
+from Galactic_Warships.SaltDeploy import SALTDEPLOY
+import logging
+import redis
 
+
+logger = logging.getLogger('test')
+
+
+########################################################################################
+###                         测试实时日志信息推送到页面                               ###
+########################################################################################
+
+class MESSAGE(object):
+    
+    def __init__(self, host='127.0.0.1', port='6379'):
+        self.host = host
+        self.port= port
+        self.redis = redis.StrictRedis(host=self.host, port=self.port)
+
+
+    #def __CreatePubsub(self):
+    #    red = redis.StrictRedis(host=self.host, port=self.port)
+    #    return red
+
+    def SubScribe(self, pname):
+        #r = self.__CreatePubsub()
+        #piple = r.pubsub()
+        #piple.subscribe(pname)
+        piple = self.redis.pubsub()
+        piple.subscribe(pname)
+        return piple
+
+    def Publish(self, pname, msg):
+        #r = self.__CreatePubsub()
+        #r.publish(pname, msg)
+        self.redis.publish(pname, msg)
+
+ 
 ################################################################
 ###                    自定义 异常类                         ###
 ################################################################
@@ -68,10 +104,69 @@ def auth_fail_handler(request):
 # Create your views here.
 def top(req):
     #print req.COOKIES["_adtech_user"]
+    topic = req.COOKIES["_adtech_user"]
+    logger.info('User access to %s Galactic Warships platform home page' % (topic,))
     return render(req, "main.html")
 
 
+##################################################################
+###            将日志输出到web页面                             ###
+##################################################################
+import time
+from django.http import StreamingHttpResponse
+from django.utils.timezone import now
 
+#logmsg = MESSAGE()
+#p = logmsg.SubScribe('online')
+#pp = logmsg.SubScribe('online')
+#logmsg.Publish('online', 'ssssssssssssssssssssssssss')
+def stream_generator(sub): 
+    #for item in p.listen():
+    #    for i,j in item:
+    #        if i == 'data':
+    #            yield u"%s"% j
+    #    #if item['type'] == 'message':
+    #    #    #yield u'%s\n\n' % message['data']
+    #    #    #bb=item['data']
+    #    #    yield u"%s" % item['data']
+    while True: 
+        # 发送事件数据 
+        # yield 'event: date\ndata: %s\n\n' % str(now()) 
+ 
+        ## 发送数据 
+        #yield u'data: %s\n\n' % str(now()) 
+        #logmsg.Publish('online', 'ttttttttttttttttttttttttttttttttttttttttttttt')
+        #print aaa
+        aaa = p.get_message(sub)
+        if aaa:
+            #if aaa['type'] == 'message':
+                #print aaa
+                #yield u'%s\n\n' % aaa['data']
+            #yield aaa['data']
+            #yield aaa
+            yield u'data:%s\n\n' % aaa['data']
+        #else:
+        #    #continue
+        #    yield u'data: %s\n\n' % str(now())
+        time.sleep(0.01)
+
+def showlogevent(request):
+    global p
+    global pp
+    global logmsg
+    logmsg = MESSAGE()
+    logtopic = request.COOKIES["_adtech_user"]
+    p = logmsg.SubScribe(logtopic)
+    pp = logmsg.SubScribe(logtopic)
+    #logmsg.Publish(logtopic, "Welcome %s to Galactic Warships!!!" % (logtopic,))
+    response = StreamingHttpResponse(stream_generator(logtopic), content_type="text/event-stream") 
+    #response = StreamingHttpResponse(p.listen(), content_type="text/event-stream") 
+    #p.close()
+    return response 
+
+
+##################################################################
+##################################################################
 def split_word(str):
     eliminate_string=re.compile(r'[\t\n ]')
     if len(eliminate_string.search(str)) != 0:
@@ -290,7 +385,7 @@ def lock_online(req):
     online_info={'op_user':op_user,'server':ser}
     online_user_list.append(online_info)
     #cache.set("online", online_info, 60)
-    cache.set("online", online_user_list, 60)
+    cache.set("online", online_user_list, 180)
     status=[{'status':'is_online'}]
     #b=cache.get("online", "None")
     #print "xxxxxxxxxx:%s"%(type(b),)
@@ -488,8 +583,9 @@ def find_module(str):
 ############################################
 def build_project(req):
     if req.method == 'POST':
+        opuser = req.COOKIES["_adtech_user"]
         if check_online == 'no':
-           status=[{'staus':req.COOKIES["_adtech_user"]}]
+           status=[{'staus':opuser}]
         else:
             online_type = req.POST.get('onlinetype')
             pgname = req.POST.get('pgname')
@@ -538,10 +634,13 @@ def build_project(req):
                 build_param={'server_name':server, 'route':route,'ring':'all', 'pgname':pgname}
                 #print "online_type: %s; server: %s; route: %s;"%(online_type, server, route)
 
+            logger.info('Create connecting to Jenkins')
             jenkinsserver = jenkins.Jenkins("http://jenkins.adto.ad.sogou/", username='jenkins', password='jenkins')
-            #next_build_number = jenkinsserver.get_job_info(project_name)['nextBuildNumber']
+            next_build_number = jenkinsserver.get_job_info(project_name)['nextBuildNumber']
             last_build_number = jenkinsserver.get_job_info(project_name)['lastBuild']['number']
             check_result = check_building(jenkinsserver, project_name, last_build_number)
+            logmsg.Publish(opuser, "next_buil_number: %s" % (next_build_number,))
+            logmsg.Publish(opuser, "last_buil_number: %s" % (last_build_number,))
             print "check_result: %s"%(check_result,)
             status = []
             tmp_status = {}
@@ -551,10 +650,30 @@ def build_project(req):
             elif check_result == 'False':
                 print 'xxxxxproject_name: %s'%(project_name,)
                 print "module: %s; module_route: %s; module_ring: %s;"%(server, route, ring)
+
+                logger.info('Start build project project_name')
                 #jenkinsserver.build_job(project_name, {'server_name':'BiddingServer', 'route':'A', 'ring':'ring0'})
                 jenkinsserver.build_job(project_name, build_param)
                 tmp_status['status'] ='start building'
+                logmsg.Publish(opuser, "start building %s"%(project_name,))
                 status.append(tmp_status)
+                after_last_build_number = jenkinsserver.get_job_info(project_name)['lastBuild']['number']
+                while 1>0:
+                    if last_build_number == after_last_build_number: 
+                        after_last_build_number = jenkinsserver.get_job_info(project_name)['lastBuild']['number']
+                        time.sleep(10)
+                        continue
+                    check_result = check_building(jenkinsserver, project_name, after_last_build_number)
+                    logmsg.Publish(opuser, "building : %s" % (after_last_build_number,))
+                    if check_result == 'False':
+                        break
+                    time.sleep(10)
+
+                buildlog=jenkinsserver.get_build_console_output(project_name, after_last_build_number)
+                for bl in buildlog.split('\n'):
+                    logmsg.Publish(opuser, bl)
+                logmsg.Publish(opuser, "The end of %s"%(project_name,))
+
 
 
     else:
@@ -568,9 +687,10 @@ def build_project(req):
 ############################################
 def deploy_project(req):
     deploy_tgt=""
+    opuser = req.COOKIES["_adtech_user"]
     if req.method == 'POST':
         if check_online == 'no':
-            status=[{'staus':req.COOKIES["_adtech_user"]}]
+            status=[{'staus':opuser}]
         else:
             online_type = req.POST.get('onlinetype')
             pgname = req.POST.get('pgname')
@@ -599,8 +719,21 @@ def deploy_project(req):
 
     
 
+    logger.info('Started deploying %s to %s' % (deploy_pkg, deploy_tgt))
     saltDeploy=SALTDEPLOY()
-    print saltDeploy.RunCmd(cmdtarget=deploy_tgt, pkgname=deploy_pkg)
+    DResult = saltDeploy.RunCmd(cmdtarget=deploy_tgt, pkgname=deploy_pkg)
+    print type(eval(DResult)['return'])
+    #print eval(DResult)['return'][0]
+    resultDict = eval(DResult)['return'][0]
+    #print resultDict
+    for k,v in resultDict.iteritems():
+        #print "====================== %s ===========================" % k
+        logmsg.Publish(opuser, k)
+        logger.info(k)
+        for msg in v.split('\n'):
+            #print msg
+            logger.info(msg)
+            logmsg.Publish(opuser, "%s"%(msg,))
     status=[{'status':'sccess'}]
     return HttpResponse(json.dumps(status), content_type='application/json')
 

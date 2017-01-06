@@ -18,4 +18,5 @@ urlpatterns = patterns('',
     url(r'lock_online/', 'Galactic_Warships.views.lock_online'),
     url(r'getserverlist/', 'Galactic_Warships.views.show_privilege_list'),
     url(r'record_privilege/', 'Galactic_Warships.views.record_privilege'),
+    url(r'showlog/', 'Galactic_Warships.views.showlogevent'),
 )

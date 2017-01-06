@@ -49,6 +49,7 @@
     <!-- User defind load js-->
     <script src="/static/other/js/user-defined/left_sidebar.js"></script>
     <script src="http://oa.adtech.sogou-inc.com/adtechsso/static/js/adtsso.js"></script>
+    <script src="/static/other/js/user-defined/show_log.js"></script>
 
     <!--
     <script language="JavaScript">
@@ -237,6 +238,19 @@
                   </div> <!-- panel body end -->
                </div> <!-- panel default end -->
             </form>
+
+
+            <div class="panel panel-default" style="display:none" id="logboxdiv">
+                <div class="panel-heading">日志内容</div>
+                <div class="panel-body">
+                    <div class="row form-group">
+                        <div class="col-sm-12 col-lg-12">
+                        <textarea class="form-control" rows="30" id="logbox" readonly="true"></textarea>
+                        </div> <!-- col-sm-12 end -->
+                    </div> <!-- row end -->
+                </div> <!-- panel body end -->
+            </div> <!-- panel default end -->
+
 
 
             <!-- Large Build modal -->

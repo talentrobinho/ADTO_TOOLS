@@ -96,3 +96,95 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
 STATIC_URL = '/static/'
+
+#######################################################################################################
+###                                                                                                 ###
+###                                          Logging Config                                         ###
+###                                                                                                 ###
+#######################################################################################################
+import logging
+
+import django.utils.log
+import logging.handlers
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+    },
+    'formatters': {
+        'verbose': {
+            'format': '[%(asctime)s] [%(levelname)s] [%(module)s] [%(funcName)s] [line:%(lineno)d] %(message)s'
+        }
+    },
+    'handlers': {
+        'null': {
+            'level': 'INFO',
+            'class': 'logging.NullHandler',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'logfilebysize': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'verbose',
+            'filename': '/var/log/django/access_by_size.log',
+            'maxBytes': '1024',
+            'backupCount': '3'
+        },
+        'logfilebytime': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'formatter': 'verbose',
+            'filename': '/var/log/django/access_by_time.log',
+            'when': 'M',
+            'interval': 5
+        }
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'propagate': True,
+            'level': 'INFO',
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request.test': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'test': {
+            'handlers': ['console', 'logfilebysize', 'logfilebytime'],
+            'level': 'DEBUG',
+            'propagate': False,
+        }
+    }
+}
+'''
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/tmp/django_debug.log',
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+'''
