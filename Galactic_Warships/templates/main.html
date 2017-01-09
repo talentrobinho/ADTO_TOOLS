@@ -27,6 +27,9 @@
     <!-- Custom styles for this template -->
     <link href="/static/dist/css/dashboard.css" rel="stylesheet">
 
+    <style type="text/css">
+    #logbody {max-height: 500px}
+    </style>
 
 
     <!-- EasyUI JS load --> <!-- EasyTree Rely on bootstrap and jquery -->
@@ -144,7 +147,7 @@
                             <div class="radio">
                                 <label>
                                     <input type="radio" name="according_ring" id="according_ring" onclick="control_ring()">
-                                    按环上线
+                                    <p>按环上线</p>
                                 </label>
                             </div>
                             <div class="radio">
@@ -240,14 +243,10 @@
             </form>
 
 
-            <div class="panel panel-default" style="display:none" id="logboxdiv">
+            <!-- <div class="panel panel-default" style="display:none" id="logboxdiv"> -->
+            <div class="panel panel-default" id="logboxdiv">
                 <div class="panel-heading">日志内容</div>
-                <div class="panel-body">
-                    <div class="row form-group">
-                        <div class="col-sm-12 col-lg-12">
-                        <textarea class="form-control" rows="30" id="logbox" readonly="true"></textarea>
-                        </div> <!-- col-sm-12 end -->
-                    </div> <!-- row end -->
+                <div class="panel-body" id="logbody">
                 </div> <!-- panel body end -->
             </div> <!-- panel default end -->
 

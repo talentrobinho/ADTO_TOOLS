@@ -728,6 +728,7 @@ def deploy_project(req):
     #print resultDict
     for k,v in resultDict.iteritems():
         #print "====================== %s ===========================" % k
+        logmsg.Publish(opuser, "="*100)
         logmsg.Publish(opuser, k)
         logger.info(k)
         for msg in v.split('\n'):
