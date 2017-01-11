@@ -29,6 +29,7 @@
 
     <style type="text/css">
     #logbody {max-height: 500px}
+    #onlinebody {max-height: 470px}
     </style>
 
 
@@ -141,13 +142,13 @@
          {% csrf_token %}
             <div class="panel panel-default">
                 <div class="panel-heading">上线内容</div>
-                <div class="panel-body">
+                <div class="panel-body" id="onlinebody">
                     <div class="row form-group">
                         <div class="col-sm-3 col-lg-3">
                             <div class="radio">
                                 <label>
                                     <input type="radio" name="according_ring" id="according_ring" onclick="control_ring()">
-                                    <p>按环上线</p>
+                                    按环上线
                                 </label>
                             </div>
                             <div class="radio">
@@ -249,8 +250,6 @@
                 <div class="panel-body" id="logbody">
                 </div> <!-- panel body end -->
             </div> <!-- panel default end -->
-
-
 
             <!-- Large Build modal -->
             <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="build_modal">
@@ -380,7 +379,7 @@
                                         <!--
                                             <select multiple id="bs3Select" class="selectpicker show-tick form-control" data_live_search="true">  
                                         -->
-                                            <select id="bs3Select" class="selectpicker show-tick form-control" data_live_search="true">  
+                                            <select id="nameSelect" class="selectpicker show-tick form-control" data_live_search="true" onchange="get_save_privilege()">  
                                                  <option>songwanbo</option>  
                                                  <option>mengqingping</option>  
                                                  <option>lizhansheng</option>  
@@ -388,7 +387,7 @@
                                           </div>
                                           <div class="col-md-5">
                                                 <!-- <textarea class="form-control" rows="3" id="server_list"></textarea> -->
-                                                <select multiple id="server_list" class="selectpicker show-tick form-control" data_live_search="true">  
+                                                <select multiple id="server_list" class="selectpicker show-tick form-control" data_live_search="true" size='10'>  
                                                 </select> 
                                           </div>
                                         <!--
@@ -402,7 +401,7 @@
                                         <!--
                                                 <textarea class="form-control" rows="3" id="add_server"></textarea>
                                         -->
-                                                <select multiple id="select_server" class="selectpicker show-tick form-control" data_live_search="true">  
+                                                <select multiple id="select_server" class="selectpicker show-tick form-control" data_live_search="true" size="10">  
                                                 </select> 
                                           </div>
                                         </div>

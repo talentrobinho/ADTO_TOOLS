@@ -75,21 +75,37 @@ class rsyncException(Exception):
 ################################################################
 ###                    自定义 装饰器                         ###
 ################################################################
-def auth_required(view):
-    """身份认证装饰器，
-    :param view:
+ 
+def check_fail_handler(request):
+    """非法请求处理
+    :param request:
+    :return:
+    """
+    return HttpResponse(json.dumps([{'status': 'Onlie Timeout!!! Please book again!'}]), content_type='application/json')
+
+def check_online_permissions(view):
+    """上线权限检查装饰器，
+    :param perm:
     :return:
     """
  
     def decorator(request, *args, **kwargs):
         #token = request.POST.get('auth_token', '')
         user = request.COOKIES["_adtech_user"]
+        server = request.POST.get('server')
         try:
-            if user == 'lizhansheng':
-                return view(request, *args, **kwargs)
+            online_user = cache.get("online", "Nonexxxxx")
+            if online_user != 'Nonexxxxx':
+                logger.info("Current User: %s"%user)
+                logger.info("Current Online User: %s"% online_user)
+                #op_user = online_user[0]['op_user']
+                for lockinfo in online_user:
+                    if user == lockinfo['op_user'] and server == lockinfo['server']:
+                        return view(request, *args, **kwargs)
         except ValueError:
             pass
-        return auth_fail_handler(request)
+        logger.error("You don't have the reservation online")
+        return check_fail_handler(request)
     return decorator
  
  
@@ -98,14 +114,43 @@ def auth_fail_handler(request):
     :param request:
     :return:
     """
-    return HttpResponse(json.dumps([{'server': 'NOPERMISSION'}]), content_type='application/json')
+    return HttpResponse(json.dumps([{'status': '255'}]), content_type='application/json')
 
+
+def auth_required(view):
+    """上线权限认证装饰器，
+    :param view:
+    :return:
+    """
+ 
+    def decorator(request, *args, **kwargs):
+        #token = request.POST.get('auth_token', '')
+        try:
+            user = request.COOKIES["_adtech_user"]
+            ser=request.GET["service"]
+            privileges = cache.get(user, 'None')
+        except Exception ,e:
+            logger.info(e)
+        logger.info("user : %s"%user)
+        logger.info("lock server: %s"%ser)
+        logger.info(privileges)
+        logger.info(type(privileges))
+        #logger.info("have server: %s"%privileges['yes'])
+        if privileges == 'None':
+            return auth_fail_handler(request)
+        if ser in privileges['yes']:
+            return view(request, *args, **kwargs)
+        else:
+            logger.error("You don't have online access")
+        return auth_fail_handler(request)
+    return decorator
+ 
 
 # Create your views here.
 def top(req):
     #print req.COOKIES["_adtech_user"]
-    topic = req.COOKIES["_adtech_user"]
-    logger.info('User access to %s Galactic Warships platform home page' % (topic,))
+    #topic = req.COOKIES["_adtech_user"]
+    #logger.info('User access to %s Galactic Warships platform home page' % (topic,))
     return render(req, "main.html")
 
 
@@ -116,39 +161,31 @@ import time
 from django.http import StreamingHttpResponse
 from django.utils.timezone import now
 
-#logmsg = MESSAGE()
-#p = logmsg.SubScribe('online')
-#pp = logmsg.SubScribe('online')
-#logmsg.Publish('online', 'ssssssssssssssssssssssssss')
 def stream_generator(sub): 
-    #for item in p.listen():
-    #    for i,j in item:
-    #        if i == 'data':
-    #            yield u"%s"% j
-    #    #if item['type'] == 'message':
-    #    #    #yield u'%s\n\n' % message['data']
-    #    #    #bb=item['data']
-    #    #    yield u"%s" % item['data']
-    while True: 
-        # 发送事件数据 
-        # yield 'event: date\ndata: %s\n\n' % str(now()) 
+    '''
+        方法一：
+        监听订阅的消息
+    '''
+    for item in p.listen():
+        if item['type'] == 'message':
+            yield u"data:%s\n\n"% item['data']
+
+
+    '''
+        方法二：
+        监听订阅的消息
+    '''
+    ### while True: 
+    ###     # 发送事件数据 
+    ###     # yield 'event: date\ndata: %s\n\n' % str(now()) 
  
-        ## 发送数据 
-        #yield u'data: %s\n\n' % str(now()) 
-        #logmsg.Publish('online', 'ttttttttttttttttttttttttttttttttttttttttttttt')
-        #print aaa
-        aaa = p.get_message(sub)
-        if aaa:
-            #if aaa['type'] == 'message':
-                #print aaa
-                #yield u'%s\n\n' % aaa['data']
-            #yield aaa['data']
-            #yield aaa
-            yield u'data:%s\n\n' % aaa['data']
-        #else:
-        #    #continue
-        #    yield u'data: %s\n\n' % str(now())
-        time.sleep(0.01)
+    ###     ## 发送数据 
+    ###     #yield u'data: %s\n\n' % str(now()) 
+
+    ###     aaa = p.get_message(sub)
+    ###     if aaa:
+    ###         yield u'data:%s\n\n' % aaa['data']
+    ###     time.sleep(0.01)
 
 def showlogevent(request):
     global p
@@ -334,6 +371,7 @@ def sidebar_content(req):
 ############################################
 ###         operation online             ###
 ############################################
+@auth_required
 def operation_online(req):
     #op_user=req.COOKIES["_adtech_user"]
     op_user=req.GET["user"]
@@ -363,6 +401,7 @@ def operation_online(req):
 ############################################
 def check_online():
     online_user = cache.get("online", "Nonexxxxx")
+    logger.info(online_user)
     if op_user == online_user:
         status='yes'
     else:
@@ -374,6 +413,7 @@ def check_online():
 ############################################
 ###            lock online               ###
 ############################################
+
 def lock_online(req):
     op_user=req.COOKIES["_adtech_user"]
     ser=req.GET["service"]
@@ -385,12 +425,12 @@ def lock_online(req):
     online_info={'op_user':op_user,'server':ser}
     online_user_list.append(online_info)
     #cache.set("online", online_info, 60)
-    cache.set("online", online_user_list, 180)
+    cache.set("online", online_user_list, 60)
     status=[{'status':'is_online'}]
     #b=cache.get("online", "None")
     #print "xxxxxxxxxx:%s"%(type(b),)
     rep=HttpResponse(json.dumps(status), content_type='application/json')
-    rep.set_cookie("is_online", "onlining")
+    #rep.set_cookie("is_online", "onlining")
     return rep
 
 
@@ -581,98 +621,97 @@ def find_module(str):
 ############################################
 ###         build project                ###
 ############################################
+@check_online_permissions
 def build_project(req):
     if req.method == 'POST':
         opuser = req.COOKIES["_adtech_user"]
-        if check_online == 'no':
-           status=[{'staus':opuser}]
-        else:
-            online_type = req.POST.get('onlinetype')
-            pgname = req.POST.get('pgname')
-            server = req.POST.get('server')
-            route = req.POST.get('route')
-            ring = req.POST.get('ring')
-            binfilepath = req.POST.get('get_bin_path')
-            binfilemd5 = req.POST.get('check_bin_md5')
-            filepath = req.POST.get('rsync_path')
-            filetype = req.POST.get('file')
-            filelist = req.POST.get('rsync_file')
-            
-            ##############################################
-            ### 将用户conf或bin文件拉到本地，再上传svn ###
-            ##############################################
+        online_type = req.POST.get('onlinetype')
+        pgname = req.POST.get('pgname')
+        server = req.POST.get('server')
+        route = req.POST.get('route')
+        ring = req.POST.get('ring')
+        binfilepath = req.POST.get('get_bin_path')
+        binfilemd5 = req.POST.get('check_bin_md5')
+        filepath = req.POST.get('rsync_path')
+        filetype = req.POST.get('file')
+        filelist = req.POST.get('rsync_file')
+        
+        ##############################################
+        ### 将用户conf或bin文件拉到本地，再上传svn ###
+        ##############################################
 
-            ### if int(filetype) == 0:
-            ###     new_file_path = 'bin'
-            ###     print 'bbbbbbbbbbbbbbbbbbbbbbbbbbb'
-            ### elif int(filetype) == 1 or int(filetype) == 2:
-            ###     new_file_path = 'conf'
-            ###     print 'filelist: %s'%(filelist,)
-            ### localpath = "/tmp/adtech/%s/%s/%s/%s"%(server, route, ring, new_file_path)
+        ### if int(filetype) == 0:
+        ###     new_file_path = 'bin'
+        ###     print 'bbbbbbbbbbbbbbbbbbbbbbbbbbb'
+        ### elif int(filetype) == 1 or int(filetype) == 2:
+        ###     new_file_path = 'conf'
+        ###     print 'filelist: %s'%(filelist,)
+        ### localpath = "/tmp/adtech/%s/%s/%s/%s"%(server, route, ring, new_file_path)
 
-            ### print 'localpath: %s'%(localpath,)
-            ### print 'pgname: %s'%(pgname,)
-            ### print 'new_file_path: %s'%(new_file_path,)
-            ### opfile = OperationFile(src_path=filepath, dst_path=localpath, option="-aP", file_list_str=filelist)
-            ### rsyncresult=opfile.rsync_file()
-            ### print "rsyncresult: %s"%(rsyncresult,)
-            ### if rsyncresult == 0:
-            ###     opsvn = OperationSVN(code_path=localpath)
-            ###     opsvn.add_file(filelist)
-            ###     opsvn.commit_file(file=filelist, desc='test xxxx svn')
+        ### print 'localpath: %s'%(localpath,)
+        ### print 'pgname: %s'%(pgname,)
+        ### print 'new_file_path: %s'%(new_file_path,)
+        ### opfile = OperationFile(src_path=filepath, dst_path=localpath, option="-aP", file_list_str=filelist)
+        ### rsyncresult=opfile.rsync_file()
+        ### print "rsyncresult: %s"%(rsyncresult,)
+        ### if rsyncresult == 0:
+        ###     opsvn = OperationSVN(code_path=localpath)
+        ###     opsvn.add_file(filelist)
+        ###     opsvn.commit_file(file=filelist, desc='test xxxx svn')
 
-            if online_type == "on_ring":
-                #print "online_type: %s; server: %s; route: %s;ring: %s;"%(online_type, server, route, ring)
-                #project_name=server+"_"+route+"_"+ring
-                project_name=find_module(server)
+        if online_type == "on_ring":
+            #print "online_type: %s; server: %s; route: %s;ring: %s;"%(online_type, server, route, ring)
+            #project_name=server+"_"+route+"_"+ring
+            project_name=find_module(server)
 
-                #send_build_cmd(pname)
-                build_param={'server_name':server, 'route':route, 'ring':ring, 'pgname':pgname}
-            elif online_type == "on_route":
-                #project_name=server+"_"+route
-                project_name=find_module(server)
-                build_param={'server_name':server, 'route':route,'ring':'all', 'pgname':pgname}
-                #print "online_type: %s; server: %s; route: %s;"%(online_type, server, route)
+            #send_build_cmd(pname)
+            build_param={'server_name':server, 'route':route, 'ring':ring, 'pgname':pgname}
+        elif online_type == "on_route":
+            #project_name=server+"_"+route
+            project_name=find_module(server)
+            build_param={'server_name':server, 'route':route,'ring':'all', 'pgname':pgname}
+            #print "online_type: %s; server: %s; route: %s;"%(online_type, server, route)
 
-            logger.info('Create connecting to Jenkins')
-            jenkinsserver = jenkins.Jenkins("http://jenkins.adto.ad.sogou/", username='jenkins', password='jenkins')
-            next_build_number = jenkinsserver.get_job_info(project_name)['nextBuildNumber']
-            last_build_number = jenkinsserver.get_job_info(project_name)['lastBuild']['number']
-            check_result = check_building(jenkinsserver, project_name, last_build_number)
-            logmsg.Publish(opuser, "next_buil_number: %s" % (next_build_number,))
-            logmsg.Publish(opuser, "last_buil_number: %s" % (last_build_number,))
-            print "check_result: %s"%(check_result,)
-            status = []
-            tmp_status = {}
-            if check_result == 'True':
-                tmp_status['status'] ='building'
-                status.append(tmp_status)
-            elif check_result == 'False':
-                print 'xxxxxproject_name: %s'%(project_name,)
-                print "module: %s; module_route: %s; module_ring: %s;"%(server, route, ring)
+        logger.info('Create connecting to Jenkins')
+        jenkinsserver = jenkins.Jenkins("http://jenkins.adto.ad.sogou/", username='jenkins', password='jenkins')
+        next_build_number = jenkinsserver.get_job_info(project_name)['nextBuildNumber']
+        last_build_number = jenkinsserver.get_job_info(project_name)['lastBuild']['number']
+        check_result = check_building(jenkinsserver, project_name, last_build_number)
+        logmsg.Publish(opuser, "next_buil_number: %s" % (next_build_number,))
+        logmsg.Publish(opuser, "last_buil_number: %s" % (last_build_number,))
+        print "check_result: %s"%(check_result,)
+        status = []
+        tmp_status = {}
+        if check_result == 'True':
+            tmp_status['status'] ='building'
+            status.append(tmp_status)
+        elif check_result == 'False':
+            print 'xxxxxproject_name: %s'%(project_name,)
+            print "module: %s; module_route: %s; module_ring: %s;"%(server, route, ring)
 
-                logger.info('Start build project project_name')
-                #jenkinsserver.build_job(project_name, {'server_name':'BiddingServer', 'route':'A', 'ring':'ring0'})
-                jenkinsserver.build_job(project_name, build_param)
-                tmp_status['status'] ='start building'
-                logmsg.Publish(opuser, "start building %s"%(project_name,))
-                status.append(tmp_status)
-                after_last_build_number = jenkinsserver.get_job_info(project_name)['lastBuild']['number']
-                while 1>0:
-                    if last_build_number == after_last_build_number: 
-                        after_last_build_number = jenkinsserver.get_job_info(project_name)['lastBuild']['number']
-                        time.sleep(10)
-                        continue
-                    check_result = check_building(jenkinsserver, project_name, after_last_build_number)
-                    logmsg.Publish(opuser, "building : %s" % (after_last_build_number,))
-                    if check_result == 'False':
-                        break
+            logger.info('Start build project project_name')
+            logmsg.Publish(opuser, "+"*100)
+            #jenkinsserver.build_job(project_name, {'server_name':'BiddingServer', 'route':'A', 'ring':'ring0'})
+            jenkinsserver.build_job(project_name, build_param)
+            tmp_status['status'] ='start building'
+            logmsg.Publish(opuser, "Start building %s"%(project_name,))
+            status.append(tmp_status)
+            after_last_build_number = jenkinsserver.get_job_info(project_name)['lastBuild']['number']
+            while 1>0:
+                if last_build_number == after_last_build_number: 
+                    after_last_build_number = jenkinsserver.get_job_info(project_name)['lastBuild']['number']
                     time.sleep(10)
+                    continue
+                check_result = check_building(jenkinsserver, project_name, after_last_build_number)
+                logmsg.Publish(opuser, "building : %s" % (after_last_build_number,))
+                if check_result == 'False':
+                    break
+                time.sleep(10)
 
-                buildlog=jenkinsserver.get_build_console_output(project_name, after_last_build_number)
-                for bl in buildlog.split('\n'):
-                    logmsg.Publish(opuser, bl)
-                logmsg.Publish(opuser, "The end of %s"%(project_name,))
+            buildlog=jenkinsserver.get_build_console_output(project_name, after_last_build_number)
+            for bl in buildlog.split('\n'):
+                logmsg.Publish(opuser, bl)
+            logmsg.Publish(opuser, "The end of %s"%(project_name,))
 
 
 
@@ -685,54 +724,49 @@ def build_project(req):
 ############################################
 ###         deploy project               ###
 ############################################
+@check_online_permissions
 def deploy_project(req):
     deploy_tgt=""
     opuser = req.COOKIES["_adtech_user"]
     if req.method == 'POST':
-        if check_online == 'no':
-            status=[{'staus':opuser}]
-        else:
-            online_type = req.POST.get('onlinetype')
-            pgname = req.POST.get('pgname')
-            server = req.POST.get('server')
-            route = req.POST.get('route')
-            ring = req.POST.get('ring')
+        online_type = req.POST.get('onlinetype')
+        pgname = req.POST.get('pgname')
+        server = req.POST.get('server')
+        route = req.POST.get('route')
+        ring = req.POST.get('ring')
 
-            print 'online_type: %s'%(online_type,)
-            print 'pgname: %s'%(pgname,)
-            print 'server: %s'%(server,)
-            print 'route: %s'%(route,)
-            print 'ring: %s'%(ring,)
+        print 'online_type: %s'%(online_type,)
+        print 'pgname: %s'%(pgname,)
+        print 'server: %s'%(server,)
+        print 'route: %s'%(route,)
+        print 'ring: %s'%(ring,)
 
-            if online_type == "on_ring":
-                project_name=find_module(server)
-                tgt="%s_%s_%s"%(server, route, ring)
-                deploy_tgt=tgt.replace('adtech_','')
-                deploy_pkg=pgname
-            elif online_type == "on_route":
-                project_name=find_module(server)
-                tgt="%s_%s_%s"%(server, route, 'all')
-                deploy_tgt=tgt.replace('adtech_','')
-                deploy_pkg=pgname
-                #print "deploy_tgt: %s; server: %s; route: %s;"%(online_type, server, route)
-            print "deploy_tgt: %s; deploy_pkg: %s"%(deploy_tgt,deploy_pkg)
+        if online_type == "on_ring":
+            project_name=find_module(server)
+            tgt="%s_%s_%s"%(server, route, ring)
+            deploy_tgt=tgt.replace('adtech_','')
+            deploy_pkg=pgname
+        elif online_type == "on_route":
+            project_name=find_module(server)
+            tgt="%s_%s_%s"%(server, route, 'all')
+            deploy_tgt=tgt.replace('adtech_','')
+            deploy_pkg=pgname
+            #print "deploy_tgt: %s; server: %s; route: %s;"%(online_type, server, route)
+        print "deploy_tgt: %s; deploy_pkg: %s"%(deploy_tgt,deploy_pkg)
 
     
 
     logger.info('Started deploying %s to %s' % (deploy_pkg, deploy_tgt))
+    logmsg.Publish(opuser, "+"*100)
+    logmsg.Publish(opuser,'Started deploying %s to %s' % (deploy_pkg, deploy_tgt))
     saltDeploy=SALTDEPLOY()
     DResult = saltDeploy.RunCmd(cmdtarget=deploy_tgt, pkgname=deploy_pkg)
-    print type(eval(DResult)['return'])
-    #print eval(DResult)['return'][0]
     resultDict = eval(DResult)['return'][0]
-    #print resultDict
     for k,v in resultDict.iteritems():
-        #print "====================== %s ===========================" % k
         logmsg.Publish(opuser, "="*100)
         logmsg.Publish(opuser, k)
         logger.info(k)
         for msg in v.split('\n'):
-            #print msg
             logger.info(msg)
             logmsg.Publish(opuser, "%s"%(msg,))
     status=[{'status':'sccess'}]
@@ -741,7 +775,36 @@ def deploy_project(req):
 ###################################################
 ###     show set privilege server list          ###
 ###################################################
-@auth_required
+def show_saved_privilege(req):
+    privilege_list=[]
+    deal_server_list=[]
+    if req.method == 'POST':
+        try:
+            showuser = req.POST['user']
+            privileges = cache.get(showuser, 'None')
+            if privileges != "None":
+                logger.info(privileges)
+            else:
+                server_list=get_service_info()
+                logger.info(server_list)
+                logger.info("User %s is not set permissions."%showuser)
+                for line in server_list:
+                    if line:
+                        line_tmp = line.strip('/').split('/')
+                        line_list = line_tmp[:-2]
+                        if line_list in deal_server_list:
+                            continue
+                        server_str="_".join(line_list)
+                        deal_server_list.append(line_list)
+                        privilege_list.append(server_str)
+                privileges={'yes':'None', 'no':",".join(privilege_list)}
+
+        except Exception ,e:
+            logger.info(e)
+    privilege_info=[privileges]
+    logger.info(privilege_info)
+    return HttpResponse(json.dumps(privilege_info), content_type='application/json')
+
 def show_privilege_list(req):
     root=[]
     tmp_root=[]
@@ -768,8 +831,11 @@ def record_privilege(req):
     yes_select_server = req.POST['yes_choice_privilege']
     no_select_server = req.POST['no_choice_privilege']
     op_user = req.POST['user']
-    print "select server: %s"%(yes_select_server,)
-    print "no select server: %s"%(no_select_server,)
-    print "op user: %s"%(op_user,)
+    privilege_info={'yes':yes_select_server, 'no':no_select_server}
+    logger.info("select server: %s"%(yes_select_server,))
+    logger.info("no select server: %s"%(no_select_server,))
+    logger.info("op user: %s"%(op_user,))
+    cache.set(op_user, privilege_info, 3600)
+    logger.info(cache.get(op_user))
     return HttpResponse(json.dumps([{'status':'0'}]), content_type='application/json')
     
